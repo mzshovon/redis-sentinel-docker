@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  redis-master:
+    image: redis:6.2-alpine
+    container_name: redis-master
+    volumes:
+      - ./redis-master.conf:/usr/local/etc/redis/redis.conf
+      - redis-master-data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "6479:6479"
+    networks:
+      - redis-network
+
+  redis-slave-1:
+    image: redis:6.2-alpine
+    container_name: redis-slave-1
+    volumes:
+      - ./redis-slave-1.conf:/usr/local/etc/redis/redis.conf
+      - redis-slave-1-data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    depends_on:
+      - redis-master
+    networks:
+      - redis-network
+
+  redis-slave-2:
+    image: redis:6.2-alpine
+    container_name: redis-slave-2
+    volumes:
+      - ./redis-slave-2.conf:/usr/local/etc/redis/redis.conf
+      - redis-slave-2-data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    depends_on:
+      - redis-master
+    networks:
+      - redis-network
+
+  redis-sentinel-1:
+    image: redis:6.2-alpine
+    container_name: redis-sentinel-1
+    volumes:
+      - ./sentinel-1.conf:/etc/redis/sentinel.conf  # Changed path
+      - ./sentinel-data-1:/data  # Added persistent data volume
+    command: redis-sentinel /etc/redis/sentinel.conf
+    depends_on:
+      - redis-master
+      - redis-slave-1
+      - redis-slave-2
+    ports:
+      - "26479:26479"
+    networks:
+      - redis-network
+
+  redis-sentinel-2:
+    image: redis:6.2-alpine
+    container_name: redis-sentinel-2
+    volumes:
+      - ./sentinel-2.conf:/etc/redis/sentinel.conf
+      - ./sentinel-data-2:/data
+    command: redis-sentinel /etc/redis/sentinel.conf
+    depends_on:
+      - redis-master
+      - redis-slave-1
+      - redis-slave-2
+    ports:
+      - "26480:26479"
+    networks:
+      - redis-network
+
+  redis-sentinel-3:
+    image: redis:6.2-alpine
+    container_name: redis-sentinel-3
+    volumes:
+      - ./sentinel-3.conf:/etc/redis/sentinel.conf
+      - ./sentinel-data-3:/data
+    command: redis-sentinel /etc/redis/sentinel.conf
+    depends_on:
+      - redis-master
+      - redis-slave-1
+      - redis-slave-2
+    ports:
+      - "26481:26479"
+    networks:
+      - redis-network
+
+volumes:
+  redis-master-data:
+  redis-slave-1-data:
+  redis-slave-2-data:
+
+networks:
+  redis-network:
+    driver: bridge
